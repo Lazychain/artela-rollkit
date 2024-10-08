@@ -8,6 +8,7 @@ services:
       context: .
       args:
         - ROLLKIT_VERSION=v0.13.7
+        - IGNITE_VERSION=v28.4.0
 
     # The image config can be used for running against published images
     # image: artelanetwork/rollkit:latest

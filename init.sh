@@ -2,6 +2,7 @@
 
 KEY="mykey"
 
+
 CHAINID="artroll_11820-1"
 MONIKER="localtestnet"
 KEYRING="test"
