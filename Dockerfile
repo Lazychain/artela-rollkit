@@ -1,4 +1,6 @@
 # detailed messages: docker compose build --progress=plain --no-cache
+LABEL org.opencontainers.image.source=https://github.com/Lazychain/artela-rollkit
+LABEL org.opencontainers.image.description="Lazy Chain rollkit with artela"
 
 # Stage 1: Install ignite CLI and rollkit
 FROM golang:1.22 AS base

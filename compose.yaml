@@ -9,6 +9,8 @@ services:
       args:
         - ROLLKIT_VERSION=v0.13.7
         - IGNITE_VERSION=v28.4.0
+      tags:
+        - ghcr.io/lazychain/artela-rollkit-lazy:v0.0.1-beta1
 
     # The image config can be used for running against published images
     # image: artelanetwork/rollkit:latest
