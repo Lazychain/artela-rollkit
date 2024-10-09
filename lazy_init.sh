@@ -14,8 +14,8 @@ TRACE="--trace"
 
 # Lazy extra configuration
 WORKDIR="./.lazy"
-NODE="localhost"
-TOKEN_DENOM="utia"
+NODE="0.0.0.0"
+TOKEN_DENOM="ulzy"
 MIN_GAS="0"
 MAX_GAS="20000000"
 
@@ -61,22 +61,27 @@ echo "Setting up $WORKDIR/config/genesis.json"
 # Change parameter token denominations to TOKEN_DENOM
 cat $WORKDIR/config/genesis.json | jq -r '.app_state["staking"]["params"]["bond_denom"]="'$TOKEN_DENOM'"' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
 cat $WORKDIR/config/genesis.json | jq -r '.app_state["crisis"]["constant_fee"]["denom"]="'$TOKEN_DENOM'"' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
-cat $WORKDIR/config/genesis.json | jq -r '.app_state["evm"]["params"]["evm_denom"]="'$TOKEN_DENOM'"' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
 cat $WORKDIR/config/genesis.json | jq -r '.app_state["gov"]["deposit_params"]["min_deposit"][0]["denom"]="'$TOKEN_DENOM'"' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
 cat $WORKDIR/config/genesis.json | jq -r '.app_state["gov"]["params"]["min_deposit"][0]["denom"]="'$TOKEN_DENOM'"' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
 cat $WORKDIR/config/genesis.json | jq -r '.app_state["gov"]["params"]["expedited_min_deposit"][0]["denom"]="'$TOKEN_DENOM'"' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
 cat $WORKDIR/config/genesis.json | jq -r '.app_state["mint"]["params"]["mint_denom"]="'$TOKEN_DENOM'"' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
+
+# lazy extra
+cat $WORKDIR/config/genesis.json | jq -r '.app_state["evm"]["params"]["evm_denom"]="'$TOKEN_DENOM'"' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
 
 # Set gas limit in genesis
 cat $WORKDIR/config/genesis.json | jq -r '.consensus_params["block"]["max_gas"]="'$MAX_GAS'"' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
 cat $WORKDIR/config/genesis.json | jq '.app_state["evm"]["params"]["extra_eips"]=[3855]' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
 
 # Enable unprotected txs
-cat $WORKDIR/config/genesis.json | jq '.consensus["evm"]["params"]["allow_unprotected_txs"]=true' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
+cat $WORKDIR/config/genesis.json | jq '.app_state["evm"]["params"]["allow_unprotected_txs"]=true' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
 
 echo "Allocating genesis contract"
-artela-rollkitd add-genesis-contract $(cat genesis-contract) --home $WORKDIR
+# artela-rollkitd add-genesis-contract $(cat genesis-contract) --home $WORKDIR
+artela-rollkitd add-genesis-contract 0x000000000000000000000000000000000000AAEC $(cat genesis-contract) --home $WORKDIR
 
+# This section pertains to the account abstraction for specific cases within the Artela Aspect. The source code can be found here.
+# For the moment we are not utilizing the Aspect to implement functionalities similar to session keys.
 echo "Allocate genesis accounts (cosmos formatted addresses)"
 artela-rollkitd add-genesis-account $KEY "100000000000000000000000000$TOKEN_DENOM" --keyring-backend $KEYRING --home $WORKDIR
 
@@ -146,11 +151,11 @@ else
     # set prunning options
     echo "set prunning nothing"
     sed -i 's/pruning = "default"/pruning = "nothing"/g' $WORKDIR/config/app.toml
-    # sed -i 's/pruning-keep-recent = "0"/pruning-keep-recent = "2"/g' $WORKDIR/config/app.toml
-    # sed -i 's/pruning-interval = "0"/pruning-interval = "10"/g' $WORKDIR/config/app.toml
+    sed -i 's/pruning-keep-recent = "0"/# pruning-keep-recent = "2"/g' $WORKDIR/config/app.toml
+    sed -i 's/pruning-interval = "0"/# pruning-interval = "10"/g' $WORKDIR/config/app.toml
 
     echo "set snapshot true and prometheus"
-    # sed -i 's/snapshot-interval = 0/snapshot-interval = 2000/g' $WORKDIR/config/app.toml
+    sed -i 's/snapshot-interval = 0/snapshot-interval = 2000/g' $WORKDIR/config/app.toml
     sed -i 's/enable = false/enable = true/g' $WORKDIR/config/app.toml
     sed -i 's/prometheus = false/prometheus = true/' $WORKDIR/config/config.toml
     sed -i 's/prometheus-retention-time = 0/prometheus-retention-time = 1000000000000/' $WORKDIR/config/app.toml
