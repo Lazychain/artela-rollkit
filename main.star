@@ -39,7 +39,7 @@ def run(plan):
         name="lazy",
         config=ServiceConfig(
             # Using rollkit version v0.13.5
-            image="artela-rollkit-lazy",
+            image="ghcr.io/lazychain/artela-rollkit-lazy:v0.0.1-beta1",
             cmd=["/bin/sh", "-c", " ".join(lazy_start_cmd)],
             ports=lazy_ports,
             public_ports=lazy_ports,
