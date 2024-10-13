@@ -9,8 +9,9 @@ services:
       args:
         - ROLLKIT_VERSION=v0.13.7
         - IGNITE_VERSION=v28.4.0
+        - DA_ADDRESS=http://localhost:7980
       tags:
-        - ghcr.io/lazychain/artela-rollkit-lazy:v0.0.1-beta1
+        - ghcr.io/lazychain/artela-rollkit-lazy:v0.0.1-beta2
 
     # The image config can be used for running against published images
     # image: artelanetwork/rollkit:latest
@@ -22,7 +23,9 @@ services:
     pull_policy: always
 
     # The command config is used for launching the rollup once the Docker container is running
-    command: rollkit start --rollkit.aggregator --rollkit.da_address http://localhost:7980
+    # command: artrolld start --rollkit.aggregator --rollkit.da_address http://localhost:7980
+    environment:
+      - DA_ADDRESS=http://localhost:7980
     depends_on:
       - local-da
 

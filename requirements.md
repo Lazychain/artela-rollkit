@@ -39,6 +39,8 @@ This script generate in [./lazy]
 ./lazy_init.sh
 ```
 
+Notes: Remember to take notes on the mnemonic phrase.
+
 ## Run locally
 
 ```bash

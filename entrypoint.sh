@@ -1,19 +1,14 @@
-#!/bin/bash
-
-KEY="mykey"
-
+#!/usr/bin/env bash
 
 CHAINID="artroll_11820-1"
 MONIKER="localtestnet"
 KEYRING="test"
 KEYALGO="eth_secp256k1"
 LOGLEVEL="debug"
-# trace evm
 TRACE="--trace"
-# TRACE=""
 
 # Lazy extra configuration
-WORKDIR="./.lazy"
+WORKDIR="$HOME/.artroll"
 NODE="0.0.0.0"
 TOKEN_DENOM="ulzy"
 MIN_GAS="0"
@@ -45,17 +40,17 @@ if [ -d "$WORKDIR" ]; then
   fi
 fi
 
-artela-rollkitd config set client chain-id $CHAINID --home $WORKDIR
-artela-rollkitd config set client keyring-backend $KEYRING --home $WORKDIR
+artrolld config set client chain-id $CHAINID
+artrolld config set client keyring-backend $KEYRING
 
-# if $KEY exists it should be deleted
+# if keys exists it should be deleted
 echo -e "---------${RED}"
-echo -e "Setting [$KEY]"
-artela-rollkitd keys add $KEY --keyring-backend $KEYRING --algo $KEYALGO --home $WORKDIR
+echo -e "Setting validator"
+artrolld keys add validator --keyring-backend $KEYRING --algo $KEYALGO
 echo -e "---------${NC}"
 
 # Set moniker and chain-id for artela (Moniker can be anything, chain-id must be an integer). We hide the output.
-artela-rollkitd init $MONIKER --chain-id $CHAINID --home $WORKDIR > out.log 2> /dev/null
+artrolld init $MONIKER --chain-id $CHAINID > out.log 2> /dev/null
 
 echo "Setting up $WORKDIR/config/genesis.json"
 # Change parameter token denominations to TOKEN_DENOM
@@ -77,16 +72,16 @@ cat $WORKDIR/config/genesis.json | jq '.app_state["evm"]["params"]["extra_eips"]
 cat $WORKDIR/config/genesis.json | jq '.app_state["evm"]["params"]["allow_unprotected_txs"]=true' >$WORKDIR/config/tmp_genesis.json && mv $WORKDIR/config/tmp_genesis.json $WORKDIR/config/genesis.json
 
 echo "Allocating genesis contract"
-# artela-rollkitd add-genesis-contract $(cat genesis-contract) --home $WORKDIR
-artela-rollkitd add-genesis-contract 0x000000000000000000000000000000000000AAEC $(cat genesis-contract) --home $WORKDIR
+# artrolld add-genesis-contract $(cat genesis-contract)
+# artrolld add-genesis-contract 0x000000000000000000000000000000000000AAEC $(cat genesis-contract)
 
 # This section pertains to the account abstraction for specific cases within the Artela Aspect. The source code can be found here.
 # For the moment we are not utilizing the Aspect to implement functionalities similar to session keys.
 echo "Allocate genesis accounts (cosmos formatted addresses)"
-artela-rollkitd add-genesis-account $KEY "100000000000000000000000000$TOKEN_DENOM" --keyring-backend $KEYRING --home $WORKDIR
+artrolld add-genesis-account validator "100000000000000000000000000$TOKEN_DENOM" --keyring-backend $KEYRING
 
 echo "Sign genesis transaction"
-artela-rollkitd gentx $KEY "1000000000000000000000$TOKEN_DENOM" --keyring-backend $KEYRING --chain-id $CHAINID --fees "4000000000000000$TOKEN_DENOM" --home $WORKDIR
+artrolld gentx validator "1000000000000000000000$TOKEN_DENOM" --keyring-backend $KEYRING --chain-id $CHAINID --fees "4000000000000000$TOKEN_DENOM"
 
 ADDRESS=$(jq -r '.address' $WORKDIR/config/priv_validator_key.json)
 PUB_KEY=$(jq -r '.pub_key' $WORKDIR/config/priv_validator_key.json)
@@ -98,10 +93,10 @@ jq --argjson pubKey "$PUB_KEY" '.consensus["validators"]=[{"address": "'$ADDRESS
 
 echo "Collect genesis tx"
 # We hide the output, but if fail the process end.
-artela-rollkitd collect-gentxs --home $WORKDIR >/dev/null 2>&1
+artrolld collect-gentxs >/dev/null 2>&1
 
 # Run this to ensure everything worked and that the genesis file is setup correctly
-artela-rollkitd validate-genesis --home $WORKDIR
+artrolld validate-genesis
 
 # disable produce empty block and enable prometheus metrics
 if [[ "$OSTYPE" == "darwin"* ]]; then # MAC
@@ -186,3 +181,6 @@ if [[ $1 == "pending" ]]; then
         sed -i 's/timeout_broadcast_tx_commit = "10s"/timeout_broadcast_tx_commit = "150s"/g' $WORKDIR/config/config.toml
     fi
 fi
+
+
+artrolld start --rollkit.aggregator --rollkit.da_address $DA_ADDRESS

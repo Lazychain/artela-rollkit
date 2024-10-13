@@ -6,7 +6,7 @@ da_node = import_module("github.com/rollkit/local-da/main.star@v0.3.0")
 
 def run(
     plan,
-    public_rpc_port
+    public_rpc_port=26657
 ):
 
     ##########
@@ -22,8 +22,9 @@ def run(
     # LAZY
     #####
 
-    plan.print("Adding LAZY service")
-    plan.print("NOTE: This can take a few minutes to start up...")
+    plan.print("LAZY service")
+
+    service_name="lazy-local"
     lazy_start_cmd = [
         "rollkit",
         "start",
@@ -40,31 +41,63 @@ def run(
         public_ports={ "rpc": PortSpec(number=public_rpc_port, transport_protocol="TCP",application_protocol="http")}
     )
 
-    lazy = plan.add_service(name="lazy",config=service_config)
+    lazy = plan.add_service(name=service_name,config=service_config)
 
-    # Set the local Lazy address to return
-    lazy_address = "http://{0}:{1}".format(
-        lazy.ip_address, lazy.ports["rpc"].number
-    )
+    # Create development account
+    create_dev_wallet = plan.exec(
+        description="Creating Development Account",
+        service_name=service_name,
+        recipe=ExecRecipe(
+            command=[
+                "/bin/sh",
+                "-c",
+                "artrolld keys add dev01 --keyring-backend test --output json | jq '.address |add'",
+            ]
+        ),
+    )["output"]
 
-    plan.print(lazy_address)
+    cmd = "artrolld keys list --keyring-backend test --output json | jq -r '[.[] | {(.name): .address}] | tostring | fromjson | reduce .[] as $item ({} ; . + $item)' | jq '.validator' | sed 's/\"//g;' | tr '\n' ' ' | tr -d ' '"
+    validator_addr = plan.exec(
+        description="Getting Validator Address",
+        service_name=service_name,
+        recipe=ExecRecipe(
+            command=[
+                "/bin/sh",
+                "-c",
+                cmd,
+            ]
+        ),
+    )["output"]
 
-    # lets get the myKey address same as    
-    # ./entrypoint keyinfo --file ~/.artroll/keyring-test/mykey.info --passwd test
-    exec_get_validator_adrress = ExecRecipe(
-        command = ["rollkit","keys","list","--keyring-backend","test","--output","json"],
-        extract = { "address" : "fromjson | .[0].address" },
-    )
+    cmd = "artrolld keys list --keyring-backend test --output json | jq -r '[.[] | {(.name): .address}] | tostring | fromjson | reduce .[] as $item ({} ; . + $item)' | jq '.dev01' | sed 's/\"//g;' | tr '\n' ' ' | tr -d ' '"
+    dev_addr = plan.exec(
+        description="Getting Validator Address",
+        service_name=service_name,
+        recipe=ExecRecipe(
+            command=[
+                "/bin/sh",
+                "-c",
+                cmd,
+            ]
+        ),
+    )["output"]
 
-    result = plan.exec(
-        service_name = "lazy",
-        recipe = exec_get_validator_adrress,
-        description = "Getting Validator Address"
-    )
+    # kurtosis is so limited that we need to filter \n and to use that we need tr....
+    cmd="artrolld tx bank send {0} {1} 1000000ulzy --keyring-backend test --fees 500ulzy -y".format(validator_addr,dev_addr)
 
-    plan.print(result["extract.address"])
+    fund_wallet = plan.exec(
+        description="Funding dev wallet {0}".format(dev_addr),
+        service_name=service_name,
+        recipe=ExecRecipe(
+            command=[
+                "/bin/sh",
+                "-c",
+                cmd,
+            ]
+        ),
+    )["output"]
 
-    return { "validator_addr" : result["extract.address"] }
+    return { "validator_addr" : validator_addr, "dev_addr" : dev_addr }
 
     #############
     # Lazy Bridge Frontend
