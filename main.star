@@ -25,20 +25,21 @@ def run(
     plan.print("LAZY service")
 
     service_name="lazy-local"
-    lazy_start_cmd = [
-        "rollkit",
-        "start",
-        "--rollkit.aggregator",
-        "--rollkit.da_address {0}".format(da_address),
-    ]
+    # lazy_start_cmd = [
+    #     "rollkit",
+    #     "start",
+    #     "--rollkit.aggregator",
+    #     "--rollkit.da_address {0}".format(da_address),
+    # ]
 
     service_config=ServiceConfig(
         # Using rollkit version v0.13.5
-        image="ghcr.io/lazychain/artela-rollkit-lazy:v0.0.1-beta1",
-        cmd=["/bin/sh", "-c", " ".join(lazy_start_cmd)],
+        image="ghcr.io/lazychain/artela-rollkit-lazy:v0.0.1-beta2",
+        # cmd=["/bin/sh", "-c", " ".join(lazy_start_cmd)],
         ports={ "rpc": PortSpec(number=26657,transport_protocol="TCP",application_protocol="http")},
         # create public port so that is exposed on machine and available for peering
-        public_ports={ "rpc": PortSpec(number=public_rpc_port, transport_protocol="TCP",application_protocol="http")}
+        public_ports={ "rpc": PortSpec(number=public_rpc_port, transport_protocol="TCP",application_protocol="http")},
+        env_vars = { "DA_ADDRESS": da_address },
     )
 
     lazy = plan.add_service(name=service_name,config=service_config)
@@ -55,6 +56,38 @@ def run(
             ]
         ),
     )["output"]
+
+    # this command succeed but produces the following error
+
+    #     --------------------
+    # panic: runtime error: invalid memory address or nil pointer dereference
+    # [signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0x10f6b9c]
+
+    # goroutine 1 [running]:
+    # github.com/cosmos/cosmos-sdk/codec.(*LegacyAmino).jsonMarshalAnys(0x49a8880?, {0x49a8880?, 0xc001622460?})
+    # 	/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.6/codec/amino.go:72 +0x1c
+    # github.com/cosmos/cosmos-sdk/codec.(*LegacyAmino).MarshalJSON(0x0, {0x49a8880, 0xc001622460})
+    # 	/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.6/codec/amino.go:143 +0x25
+    # github.com/artela-network/artela-rollkit/client/keys.printCreate(0xc0012b4908, 0x8b6c4c0?, 0x1, {0xc000e4ef00, 0x95}, {0x7fff6d94df52?, 0x1?})
+    # 	/app/client/keys/add.go:283 +0x2a5
+    # github.com/artela-network/artela-rollkit/client/keys.RunAddCmd({{0x0, 0x0, 0x0}, {0x60e4818, 0xc0017c09f0}, 0x0, {0xc0007dd680, 0xf}, {0x610a790, 0xc0014c6a80}, ...}, ...)
+    # 	/app/client/keys/add.go:254 +0xc45
+    # github.com/artela-network/artela-rollkit/client.runAddCmd(0xc0012b4908, {0xc00150bc20, 0x1, 0x5})
+    # 	/app/client/keys.go:92 +0x345
+    # github.com/spf13/cobra.(*Command).execute(0xc0012b4908, {0xc00150bbd0, 0x5, 0x5})
+    # 	/go/pkg/mod/github.com/spf13/cobra@v1.8.1/command.go:985 +0xaca
+    # github.com/spf13/cobra.(*Command).ExecuteC(0xc001779808)
+    # 	/go/pkg/mod/github.com/spf13/cobra@v1.8.1/command.go:1117 +0x3ff
+    # github.com/spf13/cobra.(*Command).Execute(...)
+    # 	/go/pkg/mod/github.com/spf13/cobra@v1.8.1/command.go:1041
+    # github.com/spf13/cobra.(*Command).ExecuteContext(...)
+    # 	/go/pkg/mod/github.com/spf13/cobra@v1.8.1/command.go:1034
+    # github.com/cosmos/cosmos-sdk/server/cmd.Execute(0xc001779808, {0x0, 0x0}, {0xc00139d3c0, 0xe})
+    # 	/go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.50.6/server/cmd/execute.go:34 +0x187
+    # main.main()
+    # 	/app/cmd/artrolld/main.go:15 +0x33
+
+    # --------------------
 
     cmd = "artrolld keys list --keyring-backend test --output json | jq -r '[.[] | {(.name): .address}] | tostring | fromjson | reduce .[] as $item ({} ; . + $item)' | jq '.validator' | sed 's/\"//g;' | tr '\n' ' ' | tr -d ' '"
     validator_addr = plan.exec(
