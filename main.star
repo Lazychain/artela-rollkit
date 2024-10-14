@@ -6,6 +6,7 @@ da_node = import_module("github.com/rollkit/local-da/main.star@v0.3.0")
 
 def run(
     plan,
+    dummy_mnemonic="", # this must be provided
     public_rpc_port=26657
 ):
 
@@ -45,6 +46,7 @@ def run(
     lazy = plan.add_service(name=service_name,config=service_config)
 
     # Create development account
+    cmd = "echo \"{0}\" | artrolld keys add dev01 --keyring-backend test --output json --recover | jq '.address |add'".format(dummy_mnemonic)
     create_dev_wallet = plan.exec(
         description="Creating Development Account",
         service_name=service_name,
@@ -52,7 +54,7 @@ def run(
             command=[
                 "/bin/sh",
                 "-c",
-                "artrolld keys add dev01 --keyring-backend test --output json | jq '.address |add'",
+                cmd,
             ]
         ),
     )["output"]
@@ -104,7 +106,7 @@ def run(
 
     cmd = "artrolld keys list --keyring-backend test --output json | jq -r '[.[] | {(.name): .address}] | tostring | fromjson | reduce .[] as $item ({} ; . + $item)' | jq '.dev01' | sed 's/\"//g;' | tr '\n' ' ' | tr -d ' '"
     dev_addr = plan.exec(
-        description="Getting Validator Address",
+        description="Getting Dev Address",
         service_name=service_name,
         recipe=ExecRecipe(
             command=[
@@ -117,7 +119,6 @@ def run(
 
     # kurtosis is so limited that we need to filter \n and to use that we need tr....
     cmd="artrolld tx bank send {0} {1} 1000000ulzy --keyring-backend test --fees 500ulzy -y".format(validator_addr,dev_addr)
-
     fund_wallet = plan.exec(
         description="Funding dev wallet {0}".format(dev_addr),
         service_name=service_name,
