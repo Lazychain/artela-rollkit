@@ -35,7 +35,7 @@ def run(
 
     service_config=ServiceConfig(
         # Using rollkit version v0.13.5
-        image="ghcr.io/lazychain/artela-rollkit-lazy:v0.0.1-beta2",
+        image="ghcr.io/lazychain/artela-rollkit-lazy:v0.0.1-beta3",
         # cmd=["/bin/sh", "-c", " ".join(lazy_start_cmd)],
         ports={ "rpc": PortSpec(number=26657,transport_protocol="TCP",application_protocol="http")},
         # create public port so that is exposed on machine and available for peering
