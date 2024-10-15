@@ -118,7 +118,7 @@ def run(
     )["output"]
 
     # kurtosis is so limited that we need to filter \n and to use that we need tr....
-    cmd="artrolld tx bank send {0} {1} 1000000ulzy --keyring-backend test --fees 500ulzy -y".format(validator_addr,dev_addr)
+    cmd="artrolld tx bank send {0} {1} 1000000uart --keyring-backend test --fees 500uart -y".format(validator_addr,dev_addr)
     fund_wallet = plan.exec(
         description="Funding dev wallet {0}".format(dev_addr),
         service_name=service_name,
