@@ -55,4 +55,7 @@ COPY ./entrypoint.sh /opt/entrypoint.sh
 # Ensure the entrypoint script is executable
 RUN chmod +x /opt/entrypoint.sh
 
+# p2p:26656, rpc:26657,proxy:26658,grpc:9090,grpc-web:9091,json-rpc:8545,rest:1317, 
+EXPOSE 26656 26657 26658 9090 9091 8545 1317
+ 
 ENTRYPOINT [ "/bin/bash", "/opt/entrypoint.sh" ]

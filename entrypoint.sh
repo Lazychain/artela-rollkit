@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # we need to change this for metamask to accepted
-CHAINID="11822" # Artela TestNet https://docs.artela.network/develop/node/access-testnet
+CHAINID="artroll_11820-1" # Artela TestNet https://docs.artela.network/develop/node/access-testnet
 MONIKER="localtestnet"
 KEYRING="test"
 KEYALGO="eth_secp256k1"
@@ -11,7 +11,7 @@ TRACE="--trace"
 # Lazy extra configuration
 WORKDIR="$HOME/.artroll"
 NODE="0.0.0.0"
-TOKEN_DENOM="uart"
+TOKEN_DENOM="aart"
 MIN_GAS="0"
 MAX_GAS="20000000"
 

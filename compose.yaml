@@ -11,7 +11,7 @@ services:
         - IGNITE_VERSION=v28.4.0
         - DA_ADDRESS=http://localhost:7980
       tags:
-        - ghcr.io/lazychain/artela-rollkit-lazy:v0.0.1-beta3
+        - ghcr.io/lazychain/artela-rollkit-lazy:v0.0.1-beta4
 
     # The image config can be used for running against published images
     # image: artelanetwork/rollkit:latest
