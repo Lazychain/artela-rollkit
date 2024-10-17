@@ -32,9 +32,18 @@ def run(
 
     service_config=ServiceConfig(
         # Using rollkit version v0.13.5
-        image="ghcr.io/lazychain/artela-rollkit-lazy:v0.0.1-beta4",
-        ports={ "rpc": PortSpec(number=26657,transport_protocol="TCP",application_protocol="http")},
-        public_ports={ "rpc": PortSpec(number=public_rpc_port, transport_protocol="TCP",application_protocol="http")},
+        image="ghcr.io/lazychain/artela-rollkit-lazy:v0.0.1-beta5",
+        ports={ 
+            "rpc": PortSpec(number=26657,transport_protocol="TCP",application_protocol="http"),
+            "rest": PortSpec(number=1317,transport_protocol="TCP",application_protocol="http"),
+            "json-rpc": PortSpec(number=8545,transport_protocol="TCP",application_protocol="http")
+
+            },
+        public_ports={ 
+            "rpc": PortSpec(number=public_rpc_port, transport_protocol="TCP",application_protocol="http"),
+            "rest": PortSpec(number=public_rest_port,transport_protocol="TCP",application_protocol="http"),
+            "json-rpc": PortSpec(number=public_json_rpc_port,transport_protocol="TCP",application_protocol="http")            
+            },
         env_vars = { "DA_ADDRESS": da_address },
     )
 

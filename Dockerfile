@@ -1,61 +1,74 @@
-# detailed messages: docker compose build --progress=plain --no-cache
+# This Dockerfile might not follow best practices, but that is an intentional
+# choice to have this Dockerfile use the install scripts that users use in the tutorial.
 
-# Stage 1: Install ignite CLI and rollkit
-FROM golang:1.22 AS base
+FROM ubuntu:latest
 
-ARG ROLLKIT_VERSION="v0.13.7"
-ARG IGNITE_VERSION="v28.4.0"
-
-# Install dependencies
-RUN apt update && \
-	apt-get install -y \
-	build-essential \
-	ca-certificates \
-	curl
-
-# enable faster module downloading.
-ENV GOPROXY https://proxy.golang.org
+# Install system dependencies
+RUN apt update && apt install -y bash curl jq git make sed ranger vim golang && apt clean
 
 # Set the working directory
 WORKDIR /app
 
-# cache dependencies.
-COPY ./go.mod . 
-COPY ./go.sum . 
-RUN go mod download
+# Make sure GOPATH is set
+ENV GOPATH /usr/local/go
+ENV PATH $GOPATH/bin:$PATH
 
-# Copy all files from the current directory to the container
-COPY . .
+# Install Rollkit dependencies
+RUN (curl -sSL https://rollkit.dev/install.sh | sh -s v0.13.5) && go clean -modcache
 
-# Build the chain
-RUN go build -x -v -o /go/bin/artrolld ./cmd/artrolld/main.go
-RUN chmod +x /go/bin/artrolld
+# Install Artela rollup
+RUN mkdir -p /app/artela-rollkit
+COPY . /app/artela-rollkit
+COPY ./.artroll /root/.artroll
 
-# Stage 2: Set up the runtime environment
-FROM debian:bookworm-slim
+# Update the working directory
+WORKDIR /app/artela-rollkit
 
-LABEL org.opencontainers.image.source=https://github.com/Lazychain/artela-rollkit
-LABEL org.opencontainers.image.description="Lazy Chain rollkit with artela"
+# Initialize the Rollkit configuration
+RUN rollkit toml init
 
-# Install dependencies
-RUN apt update && \
-	apt-get install -y \
-	jq
+# Edit rollkit.toml config_dir
+RUN sed -i 's/config_dir = "artroll"/config_dir = "\/root\/\.artroll"/g' rollkit.toml
+
+# Run base rollkit command to download packages
+RUN rollkit && go clean -modcache
+
+# Keep the container running
+CMD tail -F /dev/null
+# This Dockerfile might not follow best practices, but that is an intentional
+# choice to have this Dockerfile use the install scripts that users use in the tutorial.
+
+FROM ubuntu:latest
+
+# Install system dependencies
+RUN apt update && apt install -y bash curl jq git make sed ranger vim golang && apt clean
 
 # Set the working directory
-WORKDIR /root
+WORKDIR /app
 
-# Copy over the rollkit binary from the build stage
-COPY --from=base /go/bin/artrolld /usr/bin
+# Make sure GOPATH is set
+ENV GOPATH /usr/local/go
+ENV PATH $GOPATH/bin:$PATH
 
-# Copy the entrypoint and rollkit.toml files from the build stage
-COPY ./entrypoint.sh /opt/entrypoint.sh
-# COPY ./genesis-contract /go/bin/genesis-contract
+# Install Rollkit dependencies
+RUN (curl -sSL https://rollkit.dev/install.sh | sh -s v0.13.5) && go clean -modcache
 
-# Ensure the entrypoint script is executable
-RUN chmod +x /opt/entrypoint.sh
+# Install Artela rollup
+RUN mkdir -p /app/artela-rollkit
+COPY . /app/artela-rollkit
+COPY ./.artroll /root/.artroll
 
-# p2p:26656, rpc:26657,proxy:26658,grpc:9090,grpc-web:9091,json-rpc:8545,rest:1317, 
-EXPOSE 26656 26657 26658 9090 9091 8545 1317
- 
-ENTRYPOINT [ "/bin/bash", "/opt/entrypoint.sh" ]
+# Update the working directory
+WORKDIR /app/artela-rollkit
+
+# Initialize the Rollkit configuration
+RUN rollkit toml init
+
+# Edit rollkit.toml config_dir
+RUN sed -i 's/config_dir = "artroll"/config_dir = "\/root\/\.artroll"/g' rollkit.toml
+
+# Run base rollkit command to download packages
+RUN rollkit && go clean -modcache
+
+# Keep the container running
+CMD tail -F /dev/null
