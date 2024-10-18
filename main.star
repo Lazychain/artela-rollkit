@@ -93,7 +93,7 @@ def run(
 
     # kurtosis is so limited that we need to filter \n and to use that we need tr....
     # 4. Fund developer wallet with validator wallet
-    cmd="artrolld tx bank send {0} {1} 1000000aart --keyring-backend test --fees 4000000000000000aart -y --output json 2> /dev/null | jq '.txhash' | sed 's/\"//g;' | tr '\n' ' ' | tr -d ' '".format(validator_addr,dev_addr)
+    cmd="artrolld tx bank send {0} {1} 100000000000000000000aart --keyring-backend test --fees 4000000000000000aart -y --output json 2> /dev/null | jq '.txhash' | sed 's/\"//g;' | tr '\n' ' ' | tr -d ' '".format(validator_addr,dev_addr)
     fund_wallet = plan.exec(
         description="Funding dev wallet {0}".format(dev_addr),
         service_name=service_name,
